@@ -1,7 +1,10 @@
+import re
+
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Insured
+from .validators import validate_cpf
 
 
 class InsuredSerializer(serializers.ModelSerializer):
@@ -11,6 +14,11 @@ class InsuredSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
+
+    def validate_cpf(self, value):
+        digits = re.sub(r'\D', '', value or '')
+        validate_cpf(digits)
+        return digits
 
     def create(self, validated_data):
         password = validated_data.pop('password')
