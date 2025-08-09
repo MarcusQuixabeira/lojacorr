@@ -1,7 +1,6 @@
 from django.utils.timezone import now
-from django.shortcuts import get_object_or_404
 
-from drf_spectacular.utils import extend_schema, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -68,7 +67,7 @@ class InsuredRegistrationView(APIView):
         summary="Insured Registration",
         description=(
             "Register a new Insured in the system.\n\n"
-            "Rrequired fields:\n"
+            "Required fields:\n"
             "- **name**: Insured's full name\n"
             "- **email**: Insured's e-mail address\n"
             "- **cpf**: Insured's CPF, only numbers\n"
@@ -114,7 +113,7 @@ class InsuredRegistrationView(APIView):
         serializer = InsuredSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -124,49 +123,62 @@ class InsuredEditView(APIView):
 
     @extend_schema(
         tags=["Insured"],
-        auth=[{"BearerAuth": []}],
-        summary="Update insured data",
+        summary="Edit insured profile (partial update)",
         description=(
-            "Allows an authenticated insured user to update their personal data, such as name and password.\n\n"
-            "The `password_confirmation` field must match the `password` field.\n"
-            "All fields are required.\n\n"
-            "**JWT authentication is required** (use `Authorization: Bearer <token>`)."
+            "Partially updates the authenticated insured profile. "
+            "You can update the **name** and optionally change the **password**.\n\n"
+            "**Rules:**\n"
+            "- To change password, both `password` and `password_confirmation` must be provided.\n"
+            "- `password` and `password_confirmation` must match.\n"
+            "- If you send empty strings for the password fields, the password is ignored."
         ),
         request=InsuredEditSerializer,
         responses={
-            200: InsuredSerializer,
-            400: OpenApiExample(
-                'Validation error',
-                value={"password": ["This field is required."]}
-            ),
+            200: OpenApiResponse(response=InsuredSerializer, description="Updated insured profile"),
+            400: OpenApiResponse(description="Validation error"),
         },
         examples=[
             OpenApiExample(
-                "Example request to update insured",
-                value={
-                    "name": "Updated Name",
-                    "password": "newsecurepassword",
-                    "password_confirmation": "newsecurepassword"
-                },
-                request_only=True
+                "Update name only",
+                request_only=True,
+                value={"name": "John Updated", "password": "", "password_confirmation": ""}
             ),
             OpenApiExample(
-                "Example successful response",
+                "Change password (and name)",
+                request_only=True,
+                value={"name": "John Doe", "password": "newpass123", "password_confirmation": "newpass123"}
+            ),
+            OpenApiExample(
+                "Success response",
+                response_only=True,
                 value={
-                    "name": "Updated Name",
+                    "name": "John Updated",
                     "email": "john@example.com",
-                    "cpf": "12345678900",
+                    "cpf": "52998224725",
                     "created_at": "2025-08-08T14:35:00Z",
-                    "updated_at": "2025-08-08T15:20:00Z"
-                },
-                response_only=True
-            )
-        ]
+                    "updated_at": "2025-08-08T14:36:11Z"
+                }
+            ),
+            OpenApiExample(
+                "Error: passwords mismatch",
+                response_only=True,
+                status_codes=["400"],
+                value={"non_field_errors": ["password and password confirmation needs to be the same"]}
+            ),
+            OpenApiExample(
+                "Error: only one password field informed",
+                response_only=True,
+                status_codes=["400"],
+                value={"non_field_errors": ["password and password needs to be both informed."]}
+            ),
+        ],
     )
-    def patch(self, request, pk):
+    def patch(self, request):
         serializer = InsuredEditSerializer(data=request.data, partial=True)
         if serializer.is_valid():
-            insured = get_object_or_404(Insured, pk=pk)
+            insured = Insured.objects.filter(pk=request.user.pk).first()
+            if not insured:
+                return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
             password = serializer.validated_data.pop('password', None)
             for attr, value in serializer.validated_data.items():
                 setattr(insured, attr, value)

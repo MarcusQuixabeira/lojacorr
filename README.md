@@ -161,7 +161,7 @@ Obtain tokens via `POST /api/v1/login/` (e.g. `{ "email": "...", "password": "..
 ---
 
 ### 3) Edit insured (protected)
-`PATCH /api/v1/insureds/{id}/`
+`PATCH /api/v1/insureds/edit/`
 
 Headers:
 ```

@@ -30,22 +30,25 @@ class InsuredSerializer(serializers.ModelSerializer):
 
 class InsuredEditSerializer(serializers.Serializer):
     name = serializers.CharField(allow_blank=False)
-    password = serializers.CharField(min_length=6, allow_blank=False)
-    password_confirmation = serializers.CharField(min_length=6, allow_blank=False)
+    password = serializers.CharField(min_length=6, allow_blank=True)
+    password_confirmation = serializers.CharField(min_length=6, allow_blank=True)
     
     def validate(self, data):
         name = data.get("name")
         password = data.get("password")
-        password_confirmation = data.get("password")
+        password_confirmation = data.get("password_confirmation")
         
-        if not password == password_confirmation:
-            raise serializers.ValidationError("password and password confirmation needs to be the same")
+        result = {'name': name}
         
-        return {
-            'name': name,
-            'password': password
-        }
+        if password and not password_confirmation or password_confirmation and not password:
+            raise serializers.ValidationError("password and password needs to be both informed.")
+        
+        if password and password_confirmation:
+            if not password == password_confirmation:
+                raise serializers.ValidationError("password and password confirmation needs to be the same")
+            result['password'] = password
 
+        return result
 
 class InsuredLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
