@@ -64,6 +64,12 @@ class InsuredModelTests(TestCase):
         with self.assertRaises(ValidationError):
             dup.full_clean()
 
+    def test_cpf_unique_validation(self):
+        self._make_insured(email='unique@example.com', cpf='52998224725')
+        dup = Insured(email='unique2@example.com', name='Dup', cpf='52998224725')
+        with self.assertRaises(ValidationError):
+            dup.full_clean()
+
     def test_updated_at_changes_on_save(self):
         insured = self._make_insured()
         first_updated = insured.updated_at

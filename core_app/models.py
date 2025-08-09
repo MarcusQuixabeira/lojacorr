@@ -20,7 +20,7 @@ class Insured(AbstractBaseUser):
     It represents a Insured in the system.
     """
     name = models.CharField(max_length=50, null=False, blank=False)
-    cpf = models.CharField(max_length=11, null=False, blank=False, validators=[validate_cpf])
+    cpf = models.CharField(max_length=11, null=False, blank=False, unique=True, validators=[validate_cpf])
     email = models.EmailField(null=False, blank=False, unique=True)
     created_at = models.DateTimeField(null=False, blank=False, auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True, auto_now=True)
