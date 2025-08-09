@@ -57,7 +57,7 @@ class InsuredIntegrationTests(APITestCase):
         self.assertEqual(resp.data['name'], 'John Updated')
 
         # 4) Login with the new password need to work
-        self.client.credentials()  # limpa auth
+        self.client.credentials()
         relogin = self._login(password='newpass123')
         self.assertEqual(relogin.status_code, 200)
 
