@@ -86,7 +86,7 @@ docker compose exec web python manage.py shell
 # collect static (if/when needed)
 docker compose exec web python manage.py collectstatic --noinput
 
-# run tests (if you add them)
+# run tests
 docker compose exec web python manage.py test
 ```
 
